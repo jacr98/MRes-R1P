@@ -1,0 +1,655 @@
+---
+title: "Linear mixed-effects model for Carriage by Age"
+author: "Jonah Rodgus"
+date: "09/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+library(lme4)
+library(jtools)
+
+```
+
+# Fitting linear mixed-effects model for carriage across all datasets using 'Location', 'Vaccine.Period', 'Age', and 'HIV Status' as covariates
+
+Creation of dataframe (compiled using Reading.Summaries table)
+
+```{r}
+
+Location_mixed=c(rep(c("Cajamarca, Peru", 
+                       "Northern, Malawi",
+                       "Agincourt, South Africa",
+                       "Kathmandu Valley, Nepal",
+                       "Soweto, South Africa",
+                       "Western Region, The Gambia",
+                       "Western, Netherlands",
+                       "Maela, Thailand",
+                       "Hampshire, UK",
+                       "Massachusetts, USA #1",
+                       "Hong Kong, China",
+                       "Upper River, The Gambia",
+                       "Southern, Malawi",
+                       "Massachusetts, USA #2"), times = c(2,10,12,3,20,4,9,3,5,5,6,5,1,3)))
+       
+                        #Cajamarca, Peru
+Vaccine_Period_mixed = c("pre-PCV7",
+                         "post-PCV7",
+                  
+                        #Northern, Malawi P1
+                        rep(c("pre-PCV13"), times = 5),
+                        #Northern, Malawi P1
+                        rep(c("post-PCV13"), times = 5),
+                        
+                        #Agincourt, South Africa P1
+                        rep(c("pre-PCV13"), times = 6),
+
+                        #Agincourt, South Africa P2
+                        rep(c("post-PCV13"), times = 6),
+                        
+                        #Kathmandu Valley, Nepal
+                        rep(c("pre-PCV13"), times = 3),
+                        
+                        #Soweto, South Africa P1
+                        rep(c("pre-PCV13"), times = 10),
+                        #Soweto, South Africa P1
+                        rep(c("post-PCV13"), times = 10),
+                        
+                        #Western Region, The Gambia P1
+                        rep(c("pre-PCV13"), times = 2),
+                        #Western Region, The Gambia P2
+                        rep(c("post-PCV13"), times = 2),
+                        
+                        #Western, Netherlands P1
+                        rep(c("pre-PCV7"), times = 3),
+                        #Western, Netherlands P2
+                        rep(c("pre-PCV13"), times = 3),
+                        #Western, Netherlands P3
+                        rep(c("pre-PCV13"), times = 3),
+                        
+                        #Maela, Thailand
+                        rep(c("No-PCV"), times =3),
+                        
+                        #Hampshire, UK
+                        rep(c("pre-PCV13"), times = 4),
+                        "post-PCV13",
+                        
+                        #Massachusetts, USA #1
+                        rep(c("pre-PCV13"), times = 4),
+                        "post-PCV13",
+                        
+                        #Hong Kong, China
+                        rep(c("pre-PCV"), times = 3),
+                        rep(c("post-PCV"), times = 3),
+                        
+                        #Upper River, The Gambia
+                        rep(c("pre-PCV7"), times = 5),
+                        
+                        #Southern, Malawi
+                        "pre-PCV13",
+                        
+                        #Massachusetts, USA #2
+                        rep(c("pre-PCV13"), times = 3)
+                        )
+
+      # Where the mean or median age of an age group has been given, this value is used
+      # Where only the age range of a group is given, the mid age of this group is used
+      # Age given in years
+
+             #Cajamarca, Peru    
+Age_mixed = c(1.5,
+              1.5,
+              
+             #Northern, Malawi P1
+              0.0575,
+              0.23,
+              2.7,
+              7.8,
+              26.3,
+             #Northern, Malawi P2
+              0.0575,
+              0.23,
+              3.5,
+              8.5,
+              24.2,
+             
+             #Agincourt, South Africa P1
+              1,
+              4,
+              9.5,
+              16,
+              32,
+              58,
+             #Agincourt, South Africa P2
+              1,
+              4,
+              9.5,
+              16,
+              32,
+              58,
+             
+             #Kathmandu Valley, Nepal
+              0.225,
+              0.765,
+              1.25,
+             
+             #Soweto, South Africa P1
+             0.408,
+             0.4,
+             1.41,
+             1.07,
+             3.01,
+             3.53,
+             5.72,
+             4.7,
+             30.4,
+             30.4,
+             #Soweto, South Africa P2
+             0.4167,
+             0.4,
+             1.23,
+             1.16,
+             2.98,
+             2.87,
+             5.66,
+             5.63,
+             29.1,
+             29.1,
+             
+             #Western Region, The Gambia P1
+             0.7,
+             24.5,
+             
+             #Western Region, The Gambia P2
+             0.6333,
+             25,
+             
+             #Western, Netherlands P1
+             1,
+             2.02,
+             34.7,
+             #Western, Netherlands P2
+             0.9083,
+             2,
+             35.1,
+             #Western, Netherlands P3
+             0.8917,
+             1.98,
+             35.3,
+             
+             #Maela, Thailand
+             0.25,
+             0.5833,
+             23,
+             
+             #Hampshire, UK
+             #No breakdown of <4y group provided, therefore assumed to be 2y
+             rep(c(2), times = 5),
+             
+             #Massachusetts, USA #1
+             #No breakdown of <7y group provided, therefore assumed to be 3.5y
+             rep(c(3.5), times = 5),
+             
+             #Hong Kong, China
+             rep(c(1), times = 3),
+             0.1667,
+             1,
+             1.5,
+             
+             #Upper River, The Gambia
+             2.5,
+             11,
+             21,
+             32,
+             #Age limit assumed to be 65, therefore mid age group 52.5
+             52.5,
+             
+             #Southern, Malawi
+             #No breakdown of 0-13 group therefore assumed to be 6.5
+             6.5,
+             
+             #Massachusetts, USA #2
+             rep(c(3.625), times =3)
+             )
+
+               #Cajamarca, Peru
+Sample_size_mixed= c(506,
+                509,
+                
+               #Northern, Malawi P1
+                70,
+                71,
+                109,
+                144,
+                135,
+               #Northern, Malawi P2
+                146,
+                44,
+                74,
+                89,
+                144,
+               
+               #Agincourt, South Africa P1
+                399,
+                273,
+                310,
+                158,
+                633,
+                237,
+               #Agincourt, South Africa P2
+                908,
+                422,
+                484,
+                285,
+                1188,
+                372,
+               
+               #Kathmandu Valley, Nepal
+                199,
+                202,
+                199,
+               
+               #Soweto, South Africa P1
+                60,
+                170,
+                155,
+                253,
+                262,
+                187,
+                236,
+                88,
+                704,
+                672,
+               #Soweto, South Africa P2
+                52,
+                344,
+                92,
+                447,
+                182,
+                166,
+                290,
+                76,
+                608,
+                948,
+               
+               #Western Region, The Gambia P1
+               339,
+               331,
+               #Western Region, The Gambia P1
+               350,
+               347,
+               
+               #Western, Netherlands P1
+               319,
+               321,
+               296,
+               #Western, Netherlands P2
+               329,
+               330,
+               324,
+               #Western, Netherlands P3
+               330,
+               330,
+               326,
+               
+               #Maela, Thailand
+               0,0,0,
+               
+               #Hampshire, UK
+               0,0,0,0,0,
+  
+               #Massachusetts, USA #1
+               678,
+               987,
+               1540,
+               1011,
+               1164,
+               
+               #Hong Kong, China
+               rep(c(0), times = 3),
+               477,
+               522,
+               542,
+               
+               #Upper River, The Gambia
+               515,
+               1508,
+               257,
+               313,
+               277,
+               
+               #Southern, Malawi
+               116,
+               
+               #Massachusetts, USA #2
+               678,
+               988,
+               972
+               )
+
+      # Where HIV-status is not explicitly stated in the paper, '0' is used (to be replaced by NA)
+
+                    #Cajamarca, Peru
+HIV_Status_mixed = c(rep(c(0), times = 2),
+                     
+                    #Northern, Malawi P1
+                     rep(c(0), times = 4),
+                     "-ve",
+                    #Northern, Malawi P2
+                     rep(c(0), times = 4),
+                     "-ve",
+                    
+                     #Agincourt, South Africa
+                     rep(c(0), times = 12),
+                    
+                    #Kathmandu Valley, Nepal
+                     rep(c(0), times = 3),
+                    
+                    #Soweto, South Africa P1
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                    #Soweto, South Africa P1
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                     "+ve",
+                     "-ve",
+                    
+                    #Western Region, The Gambia
+                    rep(c(0), times = 4),
+                    
+                    #Western, Netherlands
+                    rep(c("-ve"), times = 9),
+                    
+                    #Maela, Thailand,
+                    rep(c(0), 3),
+                    
+                    #Hampshire, UK
+                    rep(c("-ve"), times = 5),
+                    
+                    #Massachusetts, USA #1
+                    rep(c("-ve"), times = 5),
+                    
+                    #Hong Kong, China
+                    rep(c("-ve"), times = 6),
+                    
+                    #Upper River, The Gambia
+                    rep(c(0), times = 5),
+                    
+                    #Southern, Malawi
+                    #No breakdown by HIV status provided
+                    0,
+                    
+                    #Massachusetts, USA #2
+                    rep(c("-ve"), times = 3)
+                    )
+
+
+                 #Cajamarca, Peru
+Carriage_mixed = c(61,
+                   53,
+                   
+                 #Northern, Malawi P1
+                   38.6,
+                   74.7,
+                   59.4,
+                   49.5,
+                   16.8,
+                  #Northern, Malawi P2
+                   43.8,
+                   50.0,
+                   63.9,
+                   37.1,
+                   15.3,
+                 
+                 #Agincourt, South Africa P1
+                   83,
+                   80.20,
+                   60,
+                   22.80,
+                   10.70,
+                   5.10,
+                 #Agincourt, South Africa P2
+                   73.40,
+                   72.80,
+                   50.00,
+                   12.30,
+                   5.80,
+                   5.90,
+                 
+                 #Kathmandu Valley, Nepal
+                   36.2,
+                   61.9,
+                   50.2,
+                 
+                 #Soweto, South Africa P1
+                   45,
+                   57.7,
+                   63.2,
+                   66.8,
+                   70.6,
+                   70.1,
+                   74.6,
+                   52.3,
+                   20.5,
+                   9.67,
+                 #Soweto, South Africa P2
+                  34.6,
+                  50.9,
+                  53.2,
+                  61.1,
+                  64.3,
+                  66.3,
+                  63.8,
+                  51.3,
+                  13.8,
+                  9.67,
+                 
+                 #Western Region, The Gambia P1
+                 85.8,
+                 23.0,
+                 #Western Region, The Gambia P2
+                 84.3,
+                 24.3,
+                 
+                 #Western, Netherlands P1
+                 76,
+                 66,
+                 17,
+                 #Western, Netherlands P2
+                 47,
+                 49,
+                 16,
+                 #Western, Netherlands P3
+                 52,
+                 64,
+                 20,
+                 
+                 #Maela, Thailand,
+                 75.7,
+                 87,
+                 27,
+                 
+                 #Hampshire, UK
+                 32,
+                 29,
+                 30,
+                 28.5,
+                 35,
+                 
+                 #Massachusetts, USA #1
+                 32,
+                 29,
+                 30,
+                 28.5,
+                 35,
+                 
+                 #Hong Kong, China
+                 5.8,
+                 14.0,
+                 10.5,
+                 2.3,
+                 7.9,
+                 5.9,
+                 
+                 #Upper River, The Gambia
+                 72,
+                 41.6,
+                 15.6,
+                 15.7,
+                 10.5,
+                 
+                 #Southern, Malawi
+                 61,
+                 
+                 #Massachusetts, USA #2
+                 27,
+                 23,
+                 30
+                 )
+      
+
+Mixed.df = data.frame(Location_mixed, Vaccine_Period_mixed, Age_mixed, Sample_size_mixed, HIV_Status_mixed, Carriage_mixed)
+
+Mixed.df = Mixed.df %>%
+  naniar::replace_with_na(replace = list(HIV_Status_mixed = 0, Sample_size_mixed = 0))
+
+View(Mixed.df)
+           
+```
+
+# Linear mixed effects model
+
+A linear mixed effects model follows the general form: dependent variable ~ independent variable | grouping
+
+The grouping is generally a random factor, you can include fixed factors without any grouping and you can have additional random factors without any fixed factor.
+
+For random factors, you have three basic variants:
+
+Intercepts only by random factor: (1 | random.factor)
+
+Slopes only by random factor: (0 + fixed.factor | random.factor)
+
+Intercepts and slopes by random factor: (1 + fixed.factor | random.factor)
+
+# The simplest model for the covariates, 'Location' and 'Age' is:
+
+$Carriage ~ (1|Location) + Age$
+
+Whereby 'Carriage' is predicted by the categorical variable 'Location', which is treated as a random effect, and continuous variable 'Age', which is treated as a linear fixed effect. 
+
+# The model we want for the covariates, 'Location' and 'Age' is:
+
+$Carriage ~ (1|Location) + (Age|Location)$
+
+```{r}
+
+our_mixed_model = lmer(Carriage_mixed ~ (1|Location_mixed) + (Age_mixed|Location_mixed), 
+                       data = Mixed.df, 
+                       weights = Sample_size_mixed,
+                       REML = F)
+
+summary(our_mixed_model)
+
+summ(our_mixed_model)
+
+plot(our_mixed_model)
+```
+
+# Including the covariate, 'Vaccine Period'
+
+The model inclusive of Vaccine Period (another random factor) is:
+
+$Carriage ~ (1|Location) + (Age|Location) + (1|Vaccine Period)$
+
+```{r}
+
+our_mixed_model_tes = lmer(Carriage_mixed ~ (1|Location_mixed)
+                           + (1|Vaccine_Period_mixed)
+                           +(Age_mixed|Location_mixed), 
+                           data = Mixed.df, 
+                           weights = Sample_size_mixed,
+                           REML = F)
+
+#Read online to implement Nelder-Mead optimisation routine to prevent error message "unable to evaluate scaled gradient Model failed to converge: degenerate Hessian with 2 negative eigenvalues"
+
+summary(our_mixed_model_tes)
+
+summ(our_mixed_model_tes)
+
+
+```
+
+Adding 'Vaccine Period' to this model as a covariate does not change drastically its fit to the data. Thus, we can recognise the model as a good one (see: literature on effect of vaccine introduction on overall carriage in a population).
+
+# Performing drop one function to decipher the most parsimonious lme model for the data
+
+Adding HIV-status to the model:
+
+$Carriage ~ (1|Location) + (1|Vaccine Period) + (1|HIV Status) + (Age|Location) + (Age|Vaccine Period) + (Age|HIV Status)$
+
+```{r}
+
+our_mixed_model_tes2 = lmer(Carriage_mixed ~ (1|Location_mixed)
+                            + (1|Vaccine_Period_mixed)
+                            + (1|HIV_Status_mixed)
+                            + (Age_mixed|Location_mixed) 
+                            + (Age_mixed|Vaccine_Period_mixed)
+                            + (Age_mixed|HIV_Status_mixed),
+                           data = Mixed.df, 
+                           weights = Sample_size_mixed,
+                           REML = F)
+
+summary(our_mixed_model_tes2)
+
+summ(our_mixed_model_tes2)
+
+
+```
+# AIC
+
+The Akaike information criterion (AIC) is a mathematical method for evaluating how well a model fits the data it was generated from. In statistics, AIC is used to compare different possible models and determine which one is the best fit for the data. 
+
+AIC is calculated from:
+
+ - the number of independent variables used to build the model
+ - the maximum likelihood estimate of the model (how well the model reproduces the data)
+ 
+When using AIC to compare models, lower scores are better, and AIC penalizes models that use more parameters. So if two models explain the same amount of variation, the one with fewer parameters will have a lower AIC score and will be the better-fit model.
+
+# BIC
+
+The Bayesian information criterion (BIC) is an estimate of a function of the posterior probability of a model being true, under a certain Bayesian setup, so that a lower BIC means that a model is considered to be more likely to be the true model.
+
+```{r}
+
+drop1ourmodel <- drop1(our_mixed_model_tes2,
+      all.cols = TRUE,
+      k = 2,
+      test = c("none", "Chisq", "user"),
+      trace = T)
+
+summary(drop1ourmodel)
+
+help(drop1)
+
+```
